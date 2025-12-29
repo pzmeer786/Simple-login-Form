@@ -1,0 +1,103 @@
+from flask import Flask, request, render_template_string
+import csv
+import os
+
+app = Flask(__name__)
+
+# Inline HTML + CSS
+html_code = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            width: 350px;
+            text-align: center;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Please Register Your Account</h2>
+    <form method="POST">
+        <input type="text" name="name" placeholder="Enter Name" required><br><br>
+        <input type="email" name="email" placeholder="Enter Email" required><br><br>
+        <input type="password" name="password" placeholder="Enter Your Password" required><br><br><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if user %}
+    <div class="result">
+        <h3>Submitted Data:</h3>
+        <p><strong>Name:</strong> {{ user.name }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Password:</strong> {{ user.password }}</p>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
+"""
+
+CSV_FILE = "users.csv"
+
+# Make sure CSV file exists with headers
+if not os.path.exists(CSV_FILE):
+    with open(CSV_FILE, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Name", "Email", "Password"])
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    user = None
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form["email"]
+        password = request.form["password"]
+        user = {"name": name, "email": email, "password": password}
+
+        # Save data to CSV
+        with open(CSV_FILE, mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([name, email, password])
+
+    return render_template_string(html_code, user=user)
+
+if __name__ == "__main__":
+    app.run(debug=True)
